@@ -134,6 +134,27 @@ class TestEnvironmentalLogger(unittest.TestCase):
         items = db.get_inspection_items(insp_id)
         self.assertEqual(items[0]['status'], 'in progress')
 
+    def test_update_item_transcript(self):
+        # Seed inspection and item
+        insp_id = db.create_inspection("North Gate", "2026-06-16")
+        item_id = db.add_inspection_item(insp_id, "Fallen fence", "uploads/fence.jpg", 10.0, 20.0, "uploads/fence.webm")
+        
+        # Verify initial transcript is empty or None
+        items = db.get_inspection_items(insp_id)
+        self.assertIsNone(items[0]['transcript'])
+        
+        # POST to transcript update route
+        response = self.client.post(f'/item/{item_id}/transcript', data={
+            'transcript': 'Newly edited transcript.'
+        })
+        self.assertEqual(response.status_code, 200)
+        data = response.get_json()
+        self.assertEqual(data['status'], 'success')
+        
+        # Verify transcript is now updated
+        items = db.get_inspection_items(insp_id)
+        self.assertEqual(items[0]['transcript'], 'Newly edited transcript.')
+
     def test_delete_inspection_report(self):
         # Create actual temp files in static/uploads to check physical deletion
         os.makedirs(app.UPLOAD_FOLDER, exist_ok=True)

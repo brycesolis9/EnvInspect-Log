@@ -101,17 +101,17 @@
             </div>
             
             {% if item.audio_filepath %}
-            <div style="margin-top: 14px;">
+            <div style="margin-top: 14px; text-align: left;">
                 <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 6px;">Voice Field Note:</span>
-                <audio class="detail-item-audio-player" src="{{ url_for('static', filename=item.audio_filepath) }}" controls style="margin-bottom: 8px;">
-                    Your browser does not support the audio element.
-                </audio>
-                {% if item.transcript %}
-                <div style="padding: 10px 14px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 0.9rem; line-height: 1.4; text-align: left;">
-                    <span style="font-size: 0.75rem; font-weight: 700; color: var(--accent); display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em;">Transcript:</span>
-                    <p style="margin: 0; color: var(--text-primary); font-style: italic;">"{{ item.transcript }}"</p>
+                <audio class="detail-item-audio-player" src="{{ url_for('static', filename=item.audio_filepath) }}" controls style="margin-bottom: 8px; width: 100%; display: block;"></audio>
+                
+                <div style="padding: 12px 14px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 0.9rem; margin-top: 10px;">
+                    <span style="font-size: 0.75rem; font-weight: 700; color: var(--accent); display: block; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em;">Transcript:</span>
+                    <textarea class="transcript-textarea-inline" data-item-id="{{ item.id }}" oninput="handleTranscriptInput(this)" placeholder="No voice transcript recorded. Type to add notes..." style="width: 100%; min-height: 60px; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 8px 12px; font-size: 0.9rem; color: var(--text-primary); font-style: italic; resize: vertical; line-height: 1.4; outline: none; box-sizing: border-box; font-family: inherit;">{{ item.transcript or '' }}</textarea>
+                    <div style="display: flex; justify-content: flex-end; margin-top: 8px;">
+                        <button id="save-transcript-btn-{{ item.id }}" class="btn btn-secondary" onclick="updateItemTranscript({{ item.id }})" style="display: none; padding: 4px 12px; font-size: 0.8rem; height: auto; min-height: 28px; width: auto; font-weight: 600; border-radius: var(--radius-sm);">Save Transcript</button>
+                    </div>
                 </div>
-                {% endif %}
             </div>
             {% else %}
             <div style="font-size: 0.85rem; color: var(--text-secondary); font-style: italic; margin-top: 10px;">
@@ -250,6 +250,62 @@ function updateItemStatus(selectElement) {
     })
     .finally(() => {
         selectElement.disabled = false;
+    });
+}
+
+// Show Save Transcript button on edit
+function handleTranscriptInput(textarea) {
+    const itemId = textarea.getAttribute('data-item-id');
+    const saveBtn = document.getElementById(`save-transcript-btn-${itemId}`);
+    if (saveBtn) {
+        saveBtn.style.display = 'inline-block';
+    }
+}
+
+// AJAX Transcript Update
+function updateItemTranscript(itemId) {
+    const textarea = document.querySelector(`.transcript-textarea-inline[data-item-id="${itemId}"]`);
+    const saveBtn = document.getElementById(`save-transcript-btn-${itemId}`);
+    
+    if (!textarea || !saveBtn) return;
+    
+    const newTranscript = textarea.value.trim();
+    
+    const formData = new FormData();
+    formData.append('transcript', newTranscript);
+    
+    // Disable inputs during save
+    textarea.disabled = true;
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving...';
+    
+    fetch(`/item/${itemId}/transcript`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // Hide the save button again
+            saveBtn.style.display = 'none';
+            // Show a quick visual cue on success
+            const originalBorder = textarea.style.borderColor;
+            textarea.style.borderColor = 'var(--accent)';
+            setTimeout(() => {
+                textarea.style.borderColor = originalBorder;
+            }, 1000);
+        } else {
+            alert('Failed to update transcript: ' + data.message);
+        }
+    })
+    .catch(err => {
+        console.error('Error updating transcript:', err);
+        alert('Network error while updating transcript.');
+    })
+    .finally(() => {
+        textarea.disabled = false;
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save Transcript';
     });
 }
 </script>

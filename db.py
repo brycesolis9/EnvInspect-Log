@@ -130,6 +130,17 @@ def update_item_status(item_id, status):
     conn.commit()
     conn.close()
 
+def update_item_transcript(item_id, transcript):
+    """Updates the transcript of an inspection item."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE InspectionItems SET transcript = ? WHERE id = ?",
+        (transcript, item_id)
+    )
+    conn.commit()
+    conn.close()
+
 def delete_inspection_item(item_id):
     """Deletes an individual inspection item."""
     conn = get_db_connection()

@@ -233,6 +233,13 @@ def update_status(item_id):
     db.update_item_status(item_id, status)
     return jsonify({'status': 'success', 'message': 'Status updated successfully.'})
 
+@app.route('/item/<int:item_id>/transcript', methods=['POST'])
+def update_transcript(item_id):
+    """AJAX endpoint to update the transcript of an inspection item."""
+    transcript = request.form.get('transcript', '').strip()
+    db.update_item_transcript(item_id, transcript)
+    return jsonify({'status': 'success', 'message': 'Transcript updated successfully.'})
+
 @app.route('/summaries/<int:inspection_id>/delete', methods=['POST'])
 def delete_report(inspection_id):
     """Deletes the inspection report and cleans up uploaded media files."""

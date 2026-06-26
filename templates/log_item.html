@@ -120,10 +120,9 @@
 
         <!-- Live Transcript Display -->
         <div class="transcript-preview-panel" id="transcript-preview-panel" style="display: none; margin-top: 14px; text-align: left; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 12px 16px;">
-            <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 6px;">Live Transcription:</span>
-            <div id="live-transcript-display" style="font-size: 0.9rem; color: var(--text-primary); font-style: italic; min-height: 20px; line-height: 1.4;"></div>
+            <label for="live-transcript-display" style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 6px; cursor: pointer;">Live Transcription (Edit if needed):</label>
+            <textarea id="live-transcript-display" name="transcript" class="form-control" rows="3" style="width: 100%; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: rgba(255, 255, 255, 0.05); padding: 8px 12px; font-size: 0.9rem; color: var(--text-primary); font-style: italic; resize: vertical; line-height: 1.4; font-family: inherit; box-sizing: border-box; outline: none;"></textarea>
         </div>
-        <input type="hidden" name="transcript" id="transcript-text-input">
 
         <!-- Redo Voice Note button -->
         <div style="display: flex; justify-content: center; margin-top: 12px;">
@@ -292,7 +291,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const redoRecordBtn = document.getElementById("btn-redo-note");
     const transcriptPreviewPanel = document.getElementById("transcript-preview-panel");
     const liveTranscriptDisplay = document.getElementById("live-transcript-display");
-    const transcriptTextInput = document.getElementById("transcript-text-input");
 
     let mediaRecorder = null;
     let audioChunks = [];
@@ -325,8 +323,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             }
             const currentDisplay = finalTranscript + interimTranscript;
-            liveTranscriptDisplay.textContent = currentDisplay.trim();
-            transcriptTextInput.value = currentDisplay.trim();
+            liveTranscriptDisplay.value = currentDisplay.trim();
         };
 
         recognition.onerror = (event) => {
@@ -347,8 +344,7 @@ document.addEventListener("DOMContentLoaded", () => {
         
         // Reset transcripts
         finalTranscript = "";
-        liveTranscriptDisplay.textContent = "";
-        transcriptTextInput.value = "";
+        liveTranscriptDisplay.value = "";
         transcriptPreviewPanel.style.display = "block";
         redoRecordBtn.style.display = "none";
 
@@ -465,8 +461,7 @@ document.addEventListener("DOMContentLoaded", () => {
         
         // Clear transcript state
         finalTranscript = "";
-        liveTranscriptDisplay.textContent = "";
-        transcriptTextInput.value = "";
+        liveTranscriptDisplay.value = "";
         transcriptPreviewPanel.style.display = "none";
         
         // Restore buttons
@@ -570,8 +565,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     
                     // Clear transcript state
                     finalTranscript = "";
-                    liveTranscriptDisplay.textContent = "";
-                    transcriptTextInput.value = "";
+                    liveTranscriptDisplay.value = "";
                     transcriptPreviewPanel.style.display = "none";
                     redoRecordBtn.style.display = "none";
                     
