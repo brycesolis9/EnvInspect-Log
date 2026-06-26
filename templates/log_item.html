@@ -369,7 +369,8 @@ document.addEventListener("DOMContentLoaded", () => {
             };
 
             mediaRecorder.onstop = () => {
-                audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                const recordedMimeType = mediaRecorder.mimeType || 'audio/webm';
+                audioBlob = new Blob(audioChunks, { type: recordedMimeType });
                 const audioUrl = URL.createObjectURL(audioBlob);
                 audioPlayback.src = audioUrl;
                 audioPlayback.style.display = "block";
@@ -523,7 +524,18 @@ document.addEventListener("DOMContentLoaded", () => {
         });
         
         if (audioBlob) {
-            formData.append("audio", audioBlob, "field_note.webm");
+            // Determine file extension based on the actual mimeType
+            let extension = "webm";
+            if (audioBlob.type) {
+                if (audioBlob.type.includes("mp4") || audioBlob.type.includes("aac") || audioBlob.type.includes("m4a")) {
+                    extension = "mp4";
+                } else if (audioBlob.type.includes("ogg")) {
+                    extension = "ogg";
+                } else if (audioBlob.type.includes("wav")) {
+                    extension = "wav";
+                }
+            }
+            formData.append("audio", audioBlob, `field_note.${extension}`);
         }
 
         try {

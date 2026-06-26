@@ -103,8 +103,7 @@
             {% if item.audio_filepath %}
             <div style="margin-top: 14px;">
                 <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 6px;">Voice Field Note:</span>
-                <audio class="detail-item-audio-player" controls style="margin-bottom: 8px;">
-                    <source src="{{ url_for('static', filename=item.audio_filepath) }}" type="audio/webm">
+                <audio class="detail-item-audio-player" src="{{ url_for('static', filename=item.audio_filepath) }}" controls style="margin-bottom: 8px;">
                     Your browser does not support the audio element.
                 </audio>
                 {% if item.transcript %}
