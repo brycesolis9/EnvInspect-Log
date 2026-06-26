@@ -36,7 +36,7 @@
 <p class="subtitle">Geographical plots of action items captured during this session.</p>
 
 <!-- Map Container -->
-<div id="map-container" data-items="{{ items_json | tojson | safe }}">
+<div id="map-container">
     <div id="map" style="width: 100%; height: 100%;"></div>
     <div id="map-placeholder" style="display: none; height: 100%; align-items: center; justify-content: center; background: var(--bg-secondary); color: var(--text-secondary); text-align: center; padding: 20px;">
         <div>
@@ -143,12 +143,17 @@
 {% endblock %}
 
 {% block scripts %}
+<!-- Safe JSON data container to prevent HTML quote attribute escaping issues -->
+<script id="map-data" type="application/json">
+    {{ items_json | tojson | safe }}
+</script>
+
 <!-- Leaflet.js library -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-    // Retrieve items JSON injected from Flask via data-attribute
-    const items = JSON.parse(document.getElementById("map-container").getAttribute("data-items") || "[]");
+    // Retrieve items JSON injected from Flask
+    const items = JSON.parse(document.getElementById("map-data").textContent || "[]");
     
     // Filter items with valid coordinates
     const mappedItems = items.filter(item => item.latitude !== null && item.longitude !== null);
