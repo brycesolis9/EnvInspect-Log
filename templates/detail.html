@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+
+{% block title %}EnvInspect - Report Detail{% endblock %}
+
+{% block head_extra %}
+<!-- Leaflet.js CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+{% endblock %}
+
+{% block content %}
+<div class="detail-header-card">
+    <span style="font-size: 0.8rem; text-transform: uppercase; color: var(--accent); font-weight: 700; display: block; margin-bottom: 4px;">Site Inspection Summary</span>
+    <h1 style="margin-bottom: 8px;">{{ inspection.site_name }}</h1>
+    
+    <div class="detail-meta-grid">
+        <div class="meta-item">
+            Date: <span class="meta-value">{{ inspection.inspection_date }}</span>
+        </div>
+        <div class="meta-item">
+            Total Logs: <span class="meta-value">{{ items|length }} items</span>
+        </div>
+    </div>
+    
+    <div style="margin-top: 16px;">
+        <a href="{{ url_for('resume_inspection', inspection_id=inspection.id) }}" class="btn btn-primary" style="min-height: 44px; padding: 10px 16px; font-size: 0.95rem;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px; vertical-align: middle;">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Add Item to this Inspection
+        </a>
+    </div>
+</div>
+
+<h2>Inspection Map</h2>
+<p class="subtitle">Geographical plots of action items captured during this session.</p>
+
+<!-- Map Container -->
+<div id="map-container" data-items="{{ items_json | tojson | safe }}">
+    <div id="map" style="width: 100%; height: 100%;"></div>
+    <div id="map-placeholder" style="display: none; height: 100%; align-items: center; justify-content: center; background: var(--bg-secondary); color: var(--text-secondary); text-align: center; padding: 20px;">
+        <div>
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 8px; opacity: 0.5;">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                <circle cx="12" cy="10" r="3"></circle>
+            </svg>
+            <p>No GPS coordinates captured for items in this inspection.</p>
+        </div>
+    </div>
+</div>
+
+<h2>Logged Action Items</h2>
+<p class="subtitle">Detailed records containing pictures, coordinates, and voice transcripts.</p>
+
+{% if not items %}
+<div class="card empty-state">
+    <p>No action items logged during this inspection.</p>
+</div>
+{% else %}
+    {% for item in items %}
+    <div class="detail-item-card" id="item-{{ item.id }}">
+        <div class="detail-item-header" style="flex-wrap: wrap; gap: 8px;">
+            <span class="detail-item-title">{{ item.item_name }}</span>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span id="badge-{{ item.id }}" class="badge badge-{% if item.status == 'in progress' %}in-progress{% elif item.status == 'not yet started' %}not-started{% else %}completed{% endif %}">
+                    {{ item.status }}
+                </span>
+                <span style="font-size: 0.75rem; color: var(--text-secondary); border: 1px solid var(--border-color); padding: 4px 8px; border-radius: var(--radius-sm); background: rgba(255, 255, 255, 0.02);">Item #{{ loop.index }}</span>
+                <form action="{{ url_for('delete_item', item_id=item.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this individual item and all its files? This action cannot be undone.');" style="margin: 0; display: inline-flex; align-items: center;">
+                    <button type="submit" style="background: transparent; border: none; color: var(--danger); cursor: pointer; display: inline-flex; align-items: center; padding: 4px;" title="Delete Item">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        {% if item.photo_filepath %}
+        <div class="detail-photos-grid">
+            {% for photo in item.photo_filepath.split(',') %}
+            <div class="detail-photo-item">
+                <img src="{{ url_for('static', filename=photo.strip()) }}" alt="{{ item.item_name }}">
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <div class="detail-item-body">
+            <div class="detail-item-geo">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                    <circle cx="12" cy="10" r="3"></circle>
+                </svg>
+                {% if item.latitude and item.longitude %}
+                    <span>Coordinates: <strong>{{ item.latitude|round(6) }}, {{ item.longitude|round(6) }}</strong></span>
+                {% else %}
+                    <span style="color: var(--warning);">No GPS Coordinates Logged</span>
+                {% endif %}
+            </div>
+            
+            {% if item.audio_filepath %}
+            <div style="margin-top: 14px;">
+                <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 6px;">Voice Field Note:</span>
+                <audio class="detail-item-audio-player" controls style="margin-bottom: 8px;">
+                    <source src="{{ url_for('static', filename=item.audio_filepath) }}" type="audio/webm">
+                    Your browser does not support the audio element.
+                </audio>
+                {% if item.transcript %}
+                <div style="padding: 10px 14px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 0.9rem; line-height: 1.4; text-align: left;">
+                    <span style="font-size: 0.75rem; font-weight: 700; color: var(--accent); display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em;">Transcript:</span>
+                    <p style="margin: 0; color: var(--text-primary); font-style: italic;">"{{ item.transcript }}"</p>
+                </div>
+                {% endif %}
+            </div>
+            {% else %}
+            <div style="font-size: 0.85rem; color: var(--text-secondary); font-style: italic; margin-top: 10px;">
+                No voice field note recorded for this item.
+            </div>
+            {% endif %}
+            
+            <!-- Status Update Inline -->
+            <div style="margin-top: 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding-top: 12px; border-top: 1px solid var(--border-color);">
+                <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">Update Status:</span>
+                <select class="status-select-inline" data-item-id="{{ item.id }}" onchange="updateItemStatus(this)">
+                    <option value="logged and completed" {% if item.status == 'logged and completed' %}selected{% endif %}>Logged & Completed</option>
+                    <option value="in progress" {% if item.status == 'in progress' %}selected{% endif %}>In Progress</option>
+                    <option value="not yet started" {% if item.status == 'not yet started' %}selected{% endif %}>Not Yet Started</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+{% endif %}
+
+<div class="btn-group-stacked" style="margin-top: 32px;">
+    <a href="{{ url_for('summaries') }}" class="btn btn-secondary">Back to Summaries</a>
+    <form action="{{ url_for('delete_report', inspection_id=inspection.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this entire inspection report and all its files? This action cannot be undone.');" style="width: 100%;">
+        <button type="submit" class="btn btn-danger">Delete Inspection Report</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Leaflet.js library -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    // Retrieve items JSON injected from Flask via data-attribute
+    const items = JSON.parse(document.getElementById("map-container").getAttribute("data-items") || "[]");
+    
+    // Filter items with valid coordinates
+    const mappedItems = items.filter(item => item.latitude !== null && item.longitude !== null);
+    
+    if (mappedItems.length === 0) {
+        document.getElementById("map").style.display = "none";
+        document.getElementById("map-placeholder").style.display = "flex";
+        return;
+    }
+    
+    // Initialize map
+    // Default to the first item location
+    const map = L.map('map').setView([mappedItems[0].latitude, mappedItems[0].longitude], 13);
+    
+    // Add sleek dark theme map tiles (CartoDB Dark Matter)
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 20
+    }).addTo(map);
+    
+    // Track markers to fit map bounds
+    const markerGroup = [];
+    
+    mappedItems.forEach((item, index) => {
+        // Create custom marker popup markup
+        const photosList = item.photo_filepath ? item.photo_filepath.split(',') : [];
+        const firstPhoto = photosList.length > 0 ? photosList[0].trim() : '';
+
+        const popupContent = `
+            <div style="font-family: 'Outfit', sans-serif; color: #1e293b; padding: 4px;">
+                <div style="font-weight: 700; font-size: 0.95rem; margin-bottom: 4px; color: #0f172a;">${item.item_name}</div>
+                <div style="font-size: 0.75rem; color: #64748b; margin-bottom: 6px;">Item #${index + 1}</div>
+                ${firstPhoto ? `<img src="/static/${firstPhoto}" style="width: 100%; max-width: 120px; height: 70px; object-fit: cover; border-radius: 4px; display: block; margin-bottom: 6px; border: 1px solid #e2e8f0;">` : ''}
+                <a href="#item-${item.id}" style="color: #10b981; font-weight: 600; text-decoration: none; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 2px;">
+                    View card 
+                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+                </a>
+            </div>
+        `;
+        
+        const marker = L.marker([item.latitude, item.longitude]).addTo(map).bindPopup(popupContent);
+        markerGroup.push(marker);
+    });
+    
+    // Fit map bounds to show all markers
+    if (markerGroup.length > 0) {
+        const featureGroup = L.featureGroup(markerGroup);
+        if (markerGroup.length === 1) {
+            map.setView([mappedItems[0].latitude, mappedItems[0].longitude], 15);
+        } else {
+            map.fitBounds(featureGroup.getBounds().pad(0.15));
+        }
+    }
+});
+
+// AJAX Status Update
+function updateItemStatus(selectElement) {
+    const itemId = selectElement.getAttribute('data-item-id');
+    const newStatus = selectElement.value;
+    const badge = document.getElementById(`badge-${itemId}`);
+    
+    const formData = new FormData();
+    formData.append('status', newStatus);
+    
+    // Disable select temporarily
+    selectElement.disabled = true;
+    
+    fetch(`/item/${itemId}/status`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // Update badge text
+            badge.textContent = newStatus;
+            
+            // Update badge class
+            badge.className = 'badge';
+            if (newStatus === 'in progress') {
+                badge.classList.add('badge-in-progress');
+            } else if (newStatus === 'not yet started') {
+                badge.classList.add('badge-not-started');
+            } else {
+                badge.classList.add('badge-completed');
+            }
+        } else {
+            alert('Failed to update status: ' + data.message);
+        }
+    })
+    .catch(err => {
+        console.error('Error updating status:', err);
+        alert('Network error while updating status.');
+    })
+    .finally(() => {
+        selectElement.disabled = false;
+    });
+}
+</script>
+{% endblock %}

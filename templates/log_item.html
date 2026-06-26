@@ -1,0 +1,582 @@
+{% extends "base.html" %}
+
+{% block title %}EnvInspect - Log Item{% endblock %}
+
+{% block content %}
+<div class="card" style="margin-bottom: 12px; padding: 16px 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <span style="font-size: 0.8rem; text-transform: uppercase; color: var(--accent); font-weight: 700;">Active Session</span>
+            <h2 style="margin: 0; font-size: 1.25rem;">{{ site_name }}</h2>
+        </div>
+        <a href="{{ url_for('clear_session') }}" style="color: var(--danger); font-size: 0.85rem; text-decoration: none; font-weight: 500; border: 1px solid rgba(244, 63, 94, 0.2); padding: 6px 10px; border-radius: var(--radius-sm); background: rgba(244, 63, 94, 0.03);">Exit Session</a>
+    </div>
+</div>
+
+<!-- Main Form -->
+<form id="item-form" enctype="multipart/form-data">
+    <div class="card">
+        <h2>Log Action Item</h2>
+        <p class="subtitle">Capture environmental hazards, debris, or issues at this site.</p>
+        
+        <!-- Item Name -->
+        <div class="form-group">
+            <label for="item_name">Action Item Name / Title</label>
+            <input type="text" id="item_name" name="item_name" class="form-control" placeholder="e.g., Chemical Spill, Eroded Bank, Blocked Drain" required>
+        </div>
+        
+        <!-- Photo Upload (Up to 5 Photos) -->
+        <div class="form-group">
+            <label>Capture / Attach Photos (Up to 5)</label>
+            <div class="file-upload-wrapper">
+                <input type="file" id="photo-picker" class="file-upload-input" accept="image/*" capture="environment" multiple>
+                <div class="file-upload-btn" id="photo-picker-trigger">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span id="upload-label">Capture Photo (0/5)</span>
+                </div>
+            </div>
+            <div class="photos-preview-gallery" id="photos-gallery"></div>
+        </div>
+        
+        <!-- Geolocation Tracker Panel -->
+        <div class="form-group">
+            <label>Location Coordinates (GPS)</label>
+            <div class="geo-panel">
+                <div id="geo-indicator" class="geo-status-indicator syncing"></div>
+                <div id="geo-coordinates">Acquiring satellite lock...</div>
+                <input type="hidden" name="latitude" id="latitude">
+                <input type="hidden" name="longitude" id="longitude">
+            </div>
+            <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 6px; padding-left: 4px;">
+                GPS location is automatically retrieved using HTML5 Geolocation.
+            </p>
+        </div>
+    </div>
+    
+    <!-- Guiding Questions Overlay Panel -->
+    <div class="questions-panel" id="questions-panel">
+        <h3>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+            Field Notes - Guide Questions
+        </h3>
+        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 8px;">Please answer these questions in your voice note:</p>
+        <ul class="questions-list">
+            <li><strong>Nature of element?</strong> What is it (oil, trash, erosion)?</li>
+            <li><strong>Chemical/Hazards present?</strong> Are there any hazardous materials?</li>
+            <li><strong>Waterway/Flora impact?</strong> Any streams, rivers, or plants affected?</li>
+            <li><strong>Risk & Urgency?</strong> Rate both on a scale of 1-10.</li>
+            <li><strong>Immediate action?</strong> Containment applied, spill kit used?</li>
+            <li><strong>Contact point?</strong> Who is responsible or was notified?</li>
+        </ul>
+    </div>
+
+    <!-- Audio Recording Section -->
+    <div class="audio-recorder-container">
+        <h2>Voice Field Notes</h2>
+        <p class="subtitle">Record site conditions and answers to guide questions.</p>
+        
+        <div class="audio-controls">
+            <!-- Record Start -->
+            <button type="button" class="btn-record-control btn-record-start" id="btn-record-start" title="Start Recording">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                    <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                </svg>
+            </button>
+            <!-- Record Stop -->
+            <button type="button" class="btn-record-control btn-record-stop" id="btn-record-stop" style="display: none;" title="Stop Recording">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M6 6h12v12H6z"/>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="recorder-state" id="recorder-status">Ready to record</div>
+        
+        <!-- Active Voice Visualizer -->
+        <div class="visualizer-container" id="visualizer">
+            <!-- Bars will be animated in JS -->
+            <div class="visualizer-bar"></div>
+            <div class="visualizer-bar"></div>
+            <div class="visualizer-bar"></div>
+            <div class="visualizer-bar"></div>
+            <div class="visualizer-bar"></div>
+            <div class="visualizer-bar"></div>
+            <div class="visualizer-bar"></div>
+            <div class="visualizer-bar"></div>
+            <div class="visualizer-bar"></div>
+            <div class="visualizer-bar"></div>
+        </div>
+        
+        <!-- Native Audio Playback Review -->
+        <audio id="audio-playback" class="audio-preview-player" controls></audio>
+
+        <!-- Live Transcript Display -->
+        <div class="transcript-preview-panel" id="transcript-preview-panel" style="display: none; margin-top: 14px; text-align: left; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 12px 16px;">
+            <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 6px;">Live Transcription:</span>
+            <div id="live-transcript-display" style="font-size: 0.9rem; color: var(--text-primary); font-style: italic; min-height: 20px; line-height: 1.4;"></div>
+        </div>
+        <input type="hidden" name="transcript" id="transcript-text-input">
+
+        <!-- Redo Voice Note button -->
+        <div style="display: flex; justify-content: center; margin-top: 12px;">
+            <button type="button" id="btn-redo-note" class="btn btn-secondary" style="display: none; min-height: 40px; height: 40px; padding: 6px 16px; font-size: 0.9rem; gap: 8px; width: auto; align-items: center; border-radius: var(--radius-sm);">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                </svg>
+                Redo Note
+            </button>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="btn-group-stacked">
+        <button type="submit" name="action" value="add_another" id="btn-submit-another" class="btn btn-primary">
+            Save & Add Another Item
+        </button>
+        <button type="submit" name="action" value="complete" id="btn-submit-complete" class="btn btn-secondary">
+            Save & Complete Inspection
+        </button>
+    </div>
+</form>
+
+<div id="toast-notification" style="display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(16, 185, 129, 0.95); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.2); padding: 14px 24px; border-radius: var(--radius-md); box-shadow: var(--shadow); z-index: 1000; color: #fff; font-weight: 600; text-align: center; width: 90%; max-width: 400px; animation: slideDown 0.3s ease;">
+    Item saved successfully!
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    // ------------------------------------------------------------------------
+    // 1. Geolocation API Integration
+    // ------------------------------------------------------------------------
+    const geoIndicator = document.getElementById("geo-indicator");
+    const geoCoordinates = document.getElementById("geo-coordinates");
+    const latInput = document.getElementById("latitude");
+    const lonInput = document.getElementById("longitude");
+
+    function getGPSLocation() {
+        if (!navigator.geolocation) {
+            geoIndicator.className = "geo-status-indicator error";
+            geoCoordinates.textContent = "GPS not supported by browser.";
+            return;
+        }
+
+        geoIndicator.className = "geo-status-indicator syncing";
+        geoCoordinates.textContent = "Acquiring GPS location...";
+
+        const options = {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+        };
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+                const accuracy = position.coords.accuracy.toFixed(1);
+
+                latInput.value = lat;
+                lonInput.value = lon;
+                
+                geoIndicator.className = "geo-status-indicator locked";
+                geoCoordinates.innerHTML = `Locked: <strong>${lat.toFixed(5)}°, ${lon.toFixed(5)}°</strong> (±${accuracy}m)`;
+            },
+            (error) => {
+                geoIndicator.className = "geo-status-indicator error";
+                let msg = "GPS Lock Failed";
+                switch (error.code) {
+                    case error.PERMISSION_DENIED:
+                        msg = "GPS permission denied by user.";
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        msg = "GPS signal unavailable.";
+                        break;
+                    case error.TIMEOUT:
+                        msg = "GPS request timed out.";
+                        break;
+                }
+                geoCoordinates.textContent = msg + " (Manual fallback active)";
+                console.warn("GPS Location error: ", error);
+            },
+            options
+        );
+    }
+
+    // Capture location on load
+    getGPSLocation();
+
+    // ------------------------------------------------------------------------
+    // 2. Photo Input Preview Handling (Multiple Photos - Up to 5)
+    // ------------------------------------------------------------------------
+    const photoPicker = document.getElementById("photo-picker");
+    const photosGallery = document.getElementById("photos-gallery");
+    const uploadLabel = document.getElementById("upload-label");
+    
+    let selectedPhotos = []; // Keep track of File objects
+
+    photoPicker.addEventListener("change", () => {
+        const files = Array.from(photoPicker.files);
+        if (files.length === 0) return;
+
+        // Add to selectedPhotos up to a limit of 5
+        for (let i = 0; i < files.length; i++) {
+            if (selectedPhotos.length >= 5) {
+                alert("You can only upload up to 5 photos per item.");
+                break;
+            }
+            selectedPhotos.push(files[i]);
+        }
+
+        renderPhotoGallery();
+        // Reset file picker value so the same file name can be picked again
+        photoPicker.value = "";
+    });
+
+    function renderPhotoGallery() {
+        photosGallery.innerHTML = "";
+        
+        selectedPhotos.forEach((file, index) => {
+            const previewItem = document.createElement("div");
+            previewItem.className = "photo-preview-item";
+            
+            const img = document.createElement("img");
+            img.src = URL.createObjectURL(file);
+            previewItem.appendChild(img);
+            
+            const removeBtn = document.createElement("button");
+            removeBtn.type = "button";
+            removeBtn.className = "photo-preview-remove-btn";
+            removeBtn.innerHTML = "&times;";
+            removeBtn.addEventListener("click", () => {
+                selectedPhotos.splice(index, 1);
+                renderPhotoGallery();
+            });
+            previewItem.appendChild(removeBtn);
+            
+            photosGallery.appendChild(previewItem);
+        });
+
+        // Update upload label button text
+        uploadLabel.textContent = `Capture Photo (${selectedPhotos.length}/5)`;
+        
+        // Disable picker if we hit the limit
+        if (selectedPhotos.length >= 5) {
+            photoPicker.disabled = true;
+        } else {
+            photoPicker.disabled = false;
+        }
+    }
+
+    // ------------------------------------------------------------------------
+    // 3. Audio Recording (MediaRecorder & AudioContext Visualizer)
+    // ------------------------------------------------------------------------
+    const startRecordBtn = document.getElementById("btn-record-start");
+    const stopRecordBtn = document.getElementById("btn-record-stop");
+    const recorderStatus = document.getElementById("recorder-status");
+    const audioPlayback = document.getElementById("audio-playback");
+    const questionsPanel = document.getElementById("questions-panel");
+    const visualizer = document.getElementById("visualizer");
+    const visualizerBars = document.querySelectorAll(".visualizer-bar");
+    
+    // Transcription and Redo DOM elements
+    const redoRecordBtn = document.getElementById("btn-redo-note");
+    const transcriptPreviewPanel = document.getElementById("transcript-preview-panel");
+    const liveTranscriptDisplay = document.getElementById("live-transcript-display");
+    const transcriptTextInput = document.getElementById("transcript-text-input");
+
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let audioBlob = null;
+    let audioCtx = null;
+    let analyser = null;
+    let dataArray = null;
+    let sourceNode = null;
+    let streamRef = null;
+    let animationId = null;
+    
+    // Speech Recognition setup
+    let recognition = null;
+    let finalTranscript = "";
+    
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+        recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
+        
+        recognition.onresult = (event) => {
+            let interimTranscript = "";
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                    finalTranscript += event.results[i][0].transcript + " ";
+                } else {
+                    interimTranscript += event.results[i][0].transcript;
+                }
+            }
+            const currentDisplay = finalTranscript + interimTranscript;
+            liveTranscriptDisplay.textContent = currentDisplay.trim();
+            transcriptTextInput.value = currentDisplay.trim();
+        };
+
+        recognition.onerror = (event) => {
+            console.error("Speech recognition error", event.error);
+        };
+
+        recognition.onend = () => {
+            console.log("Speech recognition ended.");
+        };
+    }
+
+    // Start recording audio
+    startRecordBtn.addEventListener("click", async () => {
+        audioChunks = [];
+        audioBlob = null;
+        audioPlayback.style.display = "none";
+        audioPlayback.src = "";
+        
+        // Reset transcripts
+        finalTranscript = "";
+        liveTranscriptDisplay.textContent = "";
+        transcriptTextInput.value = "";
+        transcriptPreviewPanel.style.display = "block";
+        redoRecordBtn.style.display = "none";
+
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            alert("Microphone recording is not supported in this browser.");
+            return;
+        }
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            streamRef = stream;
+            mediaRecorder = new MediaRecorder(stream);
+            
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    audioChunks.push(event.data);
+                }
+            };
+
+            mediaRecorder.onstop = () => {
+                audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                const audioUrl = URL.createObjectURL(audioBlob);
+                audioPlayback.src = audioUrl;
+                audioPlayback.style.display = "block";
+                recorderStatus.innerHTML = "Voice Note Recorded <span style='color: var(--accent);'>✓</span>";
+                
+                // Show Redo Note button
+                redoRecordBtn.style.display = "flex";
+                
+                // Stop audio visualizer
+                if (animationId) cancelAnimationFrame(animationId);
+                visualizerBars.forEach(bar => bar.style.height = "3px");
+                
+                // Stop tracks
+                if (streamRef) {
+                    streamRef.getTracks().forEach(track => track.stop());
+                }
+            };
+
+            // Setup real-time visualizer using AudioContext
+            try {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioCtx.createAnalyser();
+                analyser.fftSize = 32;
+                sourceNode = audioCtx.createMediaStreamSource(stream);
+                sourceNode.connect(analyser);
+                dataArray = new Uint8Array(analyser.frequencyBinCount);
+                
+                function drawVisualizer() {
+                    if (mediaRecorder && mediaRecorder.state === "recording") {
+                        animationId = requestAnimationFrame(drawVisualizer);
+                        analyser.getByteFrequencyData(dataArray);
+                        
+                        // Map frequencies to heights of visualizer bars
+                        visualizerBars.forEach((bar, index) => {
+                            // Scale frequency range
+                            const rawVal = dataArray[index % dataArray.length];
+                            const heightPercentage = Math.min(100, Math.max(10, (rawVal / 255) * 100));
+                            bar.style.height = `${heightPercentage}%`;
+                        });
+                    }
+                }
+                drawVisualizer();
+            } catch (err) {
+                console.error("Audio Context visualizer initialization failed", err);
+            }
+
+            mediaRecorder.start();
+            if (recognition) {
+                try {
+                    recognition.start();
+                } catch (e) {
+                    console.error("Error starting SpeechRecognition", e);
+                }
+            }
+            
+            // UI Updates
+            startRecordBtn.style.display = "none";
+            stopRecordBtn.style.display = "flex";
+            recorderStatus.innerHTML = "<span class='recording-pulse'></span>Recording Active...";
+            questionsPanel.classList.add("active");
+            
+        } catch (error) {
+            console.error("Error accessing microphone:", error);
+            alert("Error accessing microphone. Please grant necessary permissions.");
+        }
+    });
+
+    // Stop recording audio
+    stopRecordBtn.addEventListener("click", () => {
+        if (mediaRecorder && mediaRecorder.state === "recording") {
+            mediaRecorder.stop();
+            if (recognition) {
+                try {
+                    recognition.stop();
+                } catch (e) {
+                    console.error("Error stopping SpeechRecognition", e);
+                }
+            }
+            startRecordBtn.style.display = "flex";
+            stopRecordBtn.style.display = "none";
+            questionsPanel.classList.remove("active");
+        }
+    });
+
+    // Redo Recording Note Click Event
+    redoRecordBtn.addEventListener("click", () => {
+        // Clear audio state
+        audioChunks = [];
+        audioBlob = null;
+        audioPlayback.style.display = "none";
+        audioPlayback.src = "";
+        
+        // Clear transcript state
+        finalTranscript = "";
+        liveTranscriptDisplay.textContent = "";
+        transcriptTextInput.value = "";
+        transcriptPreviewPanel.style.display = "none";
+        
+        // Restore buttons
+        startRecordBtn.style.display = "flex";
+        stopRecordBtn.style.display = "none";
+        redoRecordBtn.style.display = "none";
+        
+        recorderStatus.textContent = "Ready to record";
+    });
+
+    // ------------------------------------------------------------------------
+    // 4. Form AJAX Submission
+    // ------------------------------------------------------------------------
+    const itemForm = document.getElementById("item-form");
+    const toastNotification = document.getElementById("toast-notification");
+    
+    let submitAction = "add_another"; // Track which button was clicked
+
+    document.getElementById("btn-submit-another").addEventListener("click", () => {
+        submitAction = "add_another";
+    });
+
+    document.getElementById("btn-submit-complete").addEventListener("click", () => {
+        submitAction = "complete";
+    });
+
+    itemForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const itemName = document.getElementById("item-name");
+        
+        // Basic Validations
+        if (selectedPhotos.length === 0) {
+            alert("Please take or select at least one photo of the inspection item.");
+            return;
+        }
+
+        if (!audioBlob) {
+            if (!confirm("Are you sure you want to log this item without an audio voice note?")) {
+                return;
+            }
+        }
+
+        // Disable buttons to prevent double submission
+        const buttons = itemForm.querySelectorAll(".btn");
+        buttons.forEach(btn => btn.disabled = true);
+
+        // Prepare FormData
+        const formData = new FormData(itemForm);
+        formData.append("action", submitAction);
+        
+        // Append all selected photos
+        selectedPhotos.forEach(file => {
+            formData.append("photos", file);
+        });
+        
+        if (audioBlob) {
+            formData.append("audio", audioBlob, "field_note.webm");
+        }
+
+        try {
+            const response = await fetch("{{ url_for('log_item') }}", {
+                method: "POST",
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.status === "success") {
+                if (submitAction === "complete") {
+                    // Redirect to inspection report detail
+                    window.location.href = `/summaries/${data.inspection_id}`;
+                } else {
+                    // Show success toast
+                    toastNotification.style.display = "block";
+                    setTimeout(() => {
+                        toastNotification.style.display = "none";
+                    }, 3000);
+
+                    // Reset form fields
+                    itemForm.reset();
+                    selectedPhotos = [];
+                    renderPhotoGallery();
+                    
+                    audioChunks = [];
+                    audioBlob = null;
+                    audioPlayback.style.display = "none";
+                    audioPlayback.src = "";
+                    recorderStatus.textContent = "Ready to record";
+                    
+                    // Clear transcript state
+                    finalTranscript = "";
+                    liveTranscriptDisplay.textContent = "";
+                    transcriptTextInput.value = "";
+                    transcriptPreviewPanel.style.display = "none";
+                    redoRecordBtn.style.display = "none";
+                    
+                    // Re-acquire GPS coordinates for next item
+                    getGPSLocation();
+                }
+            } else {
+                alert("Error saving item: " + (data.message || "Unknown error occurred."));
+            }
+        } catch (error) {
+            console.error("Submission error:", error);
+            alert("Network error: failed to submit item.");
+        } finally {
+            // Re-enable buttons
+            buttons.forEach(btn => btn.disabled = false);
+        }
+    });
+});
+</script>
+{% endblock %}

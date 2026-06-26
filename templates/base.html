@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{% block title %}Field Inspection Logger{% endblock %}</title>
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block head_extra %}{% endblock %}
+</head>
+<body>
+    <header>
+        <div class="nav-bar">
+            <a href="{{ url_for('index') }}" class="brand-title">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+                <span>EnvInspect</span>
+            </a>
+            {% if request.path != '/' %}
+            <a href="{{ url_for('index') }}" class="btn-home">Home</a>
+            {% endif %}
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+
+        <footer style="margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--border-color); text-align: center; font-size: 0.8rem; color: var(--text-secondary);">
+            &copy; 2026 EnvInspect. All rights reserved.
+        </footer>
+    </main>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>
